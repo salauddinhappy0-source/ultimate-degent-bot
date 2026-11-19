@@ -1,4 +1,4 @@
-# BAGENT Claim Telegram Bot
+# BAGENT Claim Telegram Bot Version 2
 
 **Bot: Ultimate Crypto — @ultimate_dagent_bot** (user er pochondo, 2026-11-19)
 
