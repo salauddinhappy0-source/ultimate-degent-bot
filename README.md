@@ -1,0 +1,131 @@
+# BAGENT Claim Telegram Bot
+
+**Bot: Ultimate Crypto — @ultimate_dagent_bot** (user er pochondo, 2026-11-19)
+
+@MR_COMPANY_2ND_BOT er moto bot — Binance Agentic Wallet connect kore
+Flap er free BAGENT airdrop claim kore. Ekta value-0 transaction sign kore,
+gas chara ar kono khoroch nai. Kono buy, swap, approval ba transfer kore na.
+
+## Bot ta ki kore
+
+| Button | Kaj |
+|---|---|
+| 🔗 Connect Wallet | `baw auth signin` diye pairing code + QR dekhay. Binance App diye scan kore Confirm korle, bot e `confirm` likhte hoy — tokhon `baw auth verify` chole. |
+| 🎁 Claim BAGENT | `claimAirdrop(0)` er preview dekhay (value 0, kono approval/authority change nai kina), Yes chaple execute kore, receipt + BAGENT balance janay. |
+| 📊 Check status | Wallet, Agent ID, BNB + BAGENT balance, last claim tx. |
+| 🔌 Disconnect | `baw auth signout` — session shesh kore. |
+
+## Asol trick ta ki chilo
+
+Flap page er contract `0xf713d440d84bd149e8940c2ae3932db67524e43b` te
+`claimAirdrop` call korle revert hoy. Kaj kore vault proxy
+`0x80cabb78d05205bb0f7c395ec6326bf1890e7a00` te `claimAirdrop(0)` call
+korle — eita on-chain promanito (tx
+`0x97f4e7c244ccb930ff963d274d84e5c82a646c4169893c5f6f5480fde3ec9143`,
+2026-11-19 19:30 +06, 6,614,574.88 BAGENT). Bot ei contract tai use kore.
+
+## Setup (VPS / server lagbe — bot 24/7 cholte hoy)
+
+### 1. Telegram bot banano (2 minute)
+
+1. Telegram e `@BotFather` khulo → `/newbot` likho.
+2. Bot er nam dao, tarpor username dao (sheshe `bot` thakte hobe).
+3. BotFather je **token** dibe, oita copy kore rakho.
+4. `@userinfobot` ke `/start` diye nijer Telegram user ID ta jene rakho
+   (ALLOWED_IDS er jonno).
+
+### 2. Server toiri (Ubuntu VPS)
+
+```bash
+# Node.js (baw er jonno) + Python
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs python3 python3-pip python3-venv git
+
+# Binance Agentic Wallet CLI
+npm install -g @binance/agentic-wallet@1.12.0
+baw --version   # cholle thik ache
+```
+
+### 3. Bot er code bosano
+
+```bash
+git clone <tomar repo> bagent-telegram-bot   # ba ei folder ta server e copy koro
+cd bagent-telegram-bot
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+cp .env.example .env
+nano .env    # TELEGRAM_BOT_TOKEN ar ALLOWED_IDS bosao
+```
+
+### 4. Chalano
+
+```bash
+# test kore dekho (Ctrl+C diye thamabe)
+python3 bot.py
+
+# 24/7 chalate systemd service (recommended)
+sudo nano /etc/systemd/system/bagent-bot.service
+```
+
+`bagent-bot.service` er content:
+
+```ini
+[Unit]
+Description=BAGENT claim Telegram bot
+After=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bagent-telegram-bot
+ExecStart=/home/ubuntu/bagent-telegram-bot/.venv/bin/python bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now bagent-bot
+sudo systemctl status bagent-bot
+sudo journalctl -u bagent-bot -f   # log dekhte
+```
+
+### 5. Binance App e ja korte hobe (proti wallet e ekbar)
+
+1. Binance App → Agentic Wallet → Settings → **Developer Mode ON** koro
+   (na hole claim preview cholbe na).
+2. Wallet e gas er jonno ektu BNB rakho (0.0002 BNB er motoi enough).
+
+## Kivabe use korbe (user hishebe)
+
+1. Bot e `/start` → **Connect Wallet**.
+2. QR ta Binance App diye scan koro, code miliye **Confirm** chap.
+3. Bot e `confirm` likho → wallet connect hobe.
+4. **Claim BAGENT** chap → preview dekhabe → **Yes, claim** chap.
+5. Tx hash + BAGENT amount janabe. Kaaj shesh hole **Disconnect** chap.
+
+## Security — age poro, tarpor chalao
+
+- **Wallet connect mane bot er kache wallet er FULL control.** Binance App
+  nijeo ei warning dey. Tai:
+  - Claim er jonno alada wallet use koro, jekhane sudhu gas er BNB ar
+    claim er token thakbe — main NFT/wallet kokhono connect koro na.
+  - Kaaj shesh holei **Disconnect** chap.
+  - Bot kokhono seed phrase / private key chabe na. Keu chaile oita scam.
+- **Ekta server = ekta wallet.** `baw` ekbare ekta wallet ei connect thake.
+  Je seshe Connect chapbe, session tar wallet er hobe — tai ekbare ekjon
+  use koro, kaaj shesh holei Disconnect chap. `ALLOWED_IDS` khali rakhle
+  sobai bot use korte parbe; sudhu nirdishto lok der jonno ID bosao.
+- Session 48 ghonta por expire hoy — tokhon abar Connect Wallet korte hoy.
+- Pairing code 5 minute e expire hoy — QR ashar sathe sathe scan korte hoy.
+
+## File gulo
+
+- `bot.py` — pura bot (python-telegram-bot v21, async).
+- `requirements.txt` — Python dependency.
+- `.env.example` — config er nomuna (`.env` baniye token bosate hoy).
+- `state.json` — bot nije banay (last claim tx, pending QR id). Git e diba na.
